@@ -4,8 +4,9 @@ import { saveAs } from "file-saver";
 import { PDFDocument, Page, Text, StandardFonts, rgb } from "pdf-lib";
 import { Configuration, OpenAIApi } from "openai";
 export default function Home() {
-  const [loading, setLoading] = useState(false);
 
+  // Define state variables for loading and user inputs
+  const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [degree, setDegree] = useState("");
@@ -13,12 +14,18 @@ export default function Home() {
   const [experience, setExperience] = useState("");
   const [specialtyOne, setSpecialtyOne] = useState("");
   const [specialtyTwo, setSpecialtyTwo] = useState("");
+
+
+// Create OpenAI API configuration
   const configuration = new Configuration({
     organization: "org-rXCK3Wb8ReJytvT5BtWXXpI3",
     apiKey: "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",
   });
 
+  // Create OpenAI API instance with the configuration
   const openai = new OpenAIApi(configuration);
+
+// Function to generate the cover letter using the OpenAI API
   const generateCoverLetter = async (
     position,
     company,
@@ -27,12 +34,16 @@ export default function Home() {
     specialty1,
     specialty2
   ) => {
+    // Set the loading state to true
     setLoading(true);
+
+    // Construct the prompt for the OpenAI API
     const prompt = `Please generate the body of a cover letter for a ${position} position at ${company}.
      I have a degree in ${degree} with ${experience} years of experience(s) with a specialty in ${specialty1} and ${specialty2}. 
      Make it a maximum of three paragraphs. Make the words maximum of twenty words per line  
      Add ${name} as the name after the Remarks`;
 
+     // Send the prompt to the OpenAI API and retrieve the response
     openai
       .createCompletion({
         model: "text-davinci-003",
@@ -52,6 +63,7 @@ export default function Home() {
           setLoading(false);
           console.log(res, "res");
           console.log(res?.data?.choices[0]?.text);
+          // If the response status is 200, update the state variables, create a PDF document and save it
           if (res.status === 200) {
             const pdfDoc = await PDFDocument.create();
             const timesRomanFont = await pdfDoc.embedFont(
@@ -98,6 +110,9 @@ export default function Home() {
       });
   };
 
+  // This function handles the form submission when the user clicks the submit button.
+// It prevents the default form submission behavior, and calls the generateCoverLetter function with the form input values as arguments.
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -112,8 +127,8 @@ export default function Home() {
   };
 
   return (
-    <main className="">
-      <div className="flex flex-col items-center justify-center">
+    <main className="bg-gray-100 min-h-screen py-8">
+      <div className="flex flex-col items-center justify-center mb-4">
         <h1 className="text-2xl sm:text-2xl md:text-3xl sm:text-2xl font-bold text-center">
           Cover Letter Generator
         </h1>
@@ -240,13 +255,15 @@ export default function Home() {
                 required
               />
             </div>
-
+            <div className="flex justify-center">
             <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="  bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               type="submit"
             >
               {loading ? "loading..." : "Generate Cover Letter"}
             </button>
+            </div>
+          
           </form>
         </div>
       </div>
