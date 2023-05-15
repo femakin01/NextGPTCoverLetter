@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
 import { saveAs } from "file-saver";
-import { PDFDocument, Page, Text, StandardFonts, rgb } from "pdf-lib";
-import { Configuration, OpenAIApi } from "openai";
-import Swal from 'sweetalert2'
+import { PDFDocument,StandardFonts, rgb } from "pdf-lib";
+import Swal from "sweetalert2";
+import { openai } from "./util";
 export default function Home() {
-
   // Define state variables for loading and user inputs
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -16,44 +15,86 @@ export default function Home() {
   const [specialtyOne, setSpecialtyOne] = useState("");
   const [specialtyTwo, setSpecialtyTwo] = useState("");
 
+  // Function to generate the cover letter using the OpenAI API
+  const generateCoverLetter = async (
+    position,
+    company,
+    degree,
+    experience,
+    specialty1,
+    specialty2
+  ) => {
+    // Set the loading state to true
+    setLoading(true);
 
-// Create OpenAI API configuration
-  const configuration = new Configuration({
-    organization: process.env.NEXT_PUBLIC_organization,
-    apiKey: process.env.NEXT_PUBLIC_Seceret_Key_API,
-  });
-
-  // Create OpenAI API instance with the configuration
-  const openai = new OpenAIApi(configuration);
-
-// Function to generate the cover letter using the OpenAI API
-const generateCoverLetter = async (
-  position,
-  company,
-  degree,
-  experience,
-  specialty1,
-  specialty2
-) => {
-  // Set the loading state to true
-  setLoading(true);
-
-  // Construct the prompt for the OpenAI API
-  const prompt = `Please generate the body of a cover letter for a ${position} position at ${company}.
+    // Construct the prompt for the OpenAI API
+    const prompt = `Please generate the body of a cover letter for a ${position} position at ${company}.
     I have a degree in ${degree} with ${experience} years of experience(s) with a specialty in ${specialty1} and ${specialty2}. 
     Make it a maximum of three paragraphs. Make the words maximum of twenty words per line  
     Add ${name} as the name after the Remarks`;
 
-  // Send the prompt to the OpenAI API and retrieve the response
-  openai
-    .createCompletion({
-      model: "text-davinci-003",
-      prompt: prompt,
-      temperature: 0.6,
-      max_tokens: 1000,
-    })
-    .then(async (res) => {
-      if (res.status === 200) {
+    // Send the prompt to the OpenAI API and retrieve the response
+
+    openai
+      .complete({
+        engine: "text-davinci-003",
+        prompt: prompt,
+        maxTokens: 1000,
+        temperature: 0.9,
+      })
+      .then(async (res) => {
+        if (res.status === 200) {
+          setName("");
+          setCompany("");
+          setDegree("");
+          setExperience("");
+          setPosition("");
+          setSpecialtyOne("");
+          setSpecialtyTwo("");
+          setLoading(false);
+          // If the response status is 200, update the state variables, create a PDF document and save it
+          if (res.status === 200) {
+            const pdfDoc = await PDFDocument.create();
+            const timesRomanFont = await pdfDoc.embedFont(
+              StandardFonts.TimesRoman
+            );
+            const page = pdfDoc.addPage([595.28, 841.89]);
+
+            const { width, height } = page.getSize();
+            const fontSize = 10;
+            const margin = 50;
+            let y = height - margin;
+            const words = res?.data?.choices[0]?.text.split(" ");
+            const lines = [];
+            let line = "";
+
+            for (const word of words) {
+              if ((line + word).length > 100) {
+                lines.push(line);
+                line = "";
+              }
+
+              line += `${word} `;
+            }
+
+            if (line.length > 0) {
+              lines.push(line);
+            }
+
+            page.drawText(lines.join("\n"), {
+              x: 50,
+              y: height - 4 * fontSize,
+              size: fontSize,
+              font: timesRomanFont,
+              color: rgb(0, 0.53, 0.71),
+            });
+            const pdfBytes = await pdfDoc.save();
+            saveAs(new Blob([pdfBytes.buffer]), "My_cover_letter.pdf");
+          }
+        }
+      })
+      .catch((err) => {
+        setLoading(false);
         setName("");
         setCompany("");
         setDegree("");
@@ -61,78 +102,21 @@ const generateCoverLetter = async (
         setPosition("");
         setSpecialtyOne("");
         setSpecialtyTwo("");
-        setLoading(false);
-        console.log(res, "res");
-
-        console.log(res?.data?.choices[0]?.text);
-        // If the response status is 200, update the state variables, create a PDF document and save it
-        if (res.status === 200) {
-          const pdfDoc = await PDFDocument.create();
-          const timesRomanFont = await pdfDoc.embedFont(
-            StandardFonts.TimesRoman
-          );
-          const page = pdfDoc.addPage([595.28, 841.89]);
-
-          const { width, height } = page.getSize();
-          const fontSize = 10;
-          const margin = 50;
-          let y = height - margin;
-          const words = res?.data?.choices[0]?.text.split(" ");
-          const lines = [];
-          let line = "";
-
-          for (const word of words) {
-            if ((line + word).length > 100) {
-              lines.push(line);
-              line = "";
-            }
-
-            line += `${word} `;
-          }
-
-          if (line.length > 0) {
-            lines.push(line);
-          }
-
-          page.drawText(lines.join("\n"), {
-            x: 50,
-            y: height - 4 * fontSize,
-            size: fontSize,
-            font: timesRomanFont,
-            color: rgb(0, 0.53, 0.71),
-          });
-          const pdfBytes = await pdfDoc.save();
-          saveAs(new Blob([pdfBytes.buffer]), "My_cover_letter.pdf");
-        }
-      }
-    })
-    .catch((err) => {
-      setLoading(false);
-      setName("");
-      setCompany("");
-      setDegree("");
-      setExperience("");
-      setPosition("");
-      setSpecialtyOne("");
-      setSpecialtyTwo("");
-      Swal.fire({
-        title: "Error!",
-        text: `${err}`,
-        icon: "error",
-        confirmButtonText: "ok",
+        Swal.fire({
+          title: "Error!",
+          text: `${err}`,
+          icon: "error",
+          confirmButtonText: "ok",
+        });
       });
-    });
-};
+  };
 
   // This function handles the form submission when the user clicks the submit button.
-// It prevents the default form submission behavior, and calls the generateCoverLetter function with the form input values as arguments.
+  // It prevents the default form submission behavior, and calls the generateCoverLetter 
+  //function with the form input values as arguments.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-
-    console.log(process.env.NEXT_PUBLIC_organization)
-    console.log(process.env.NEXT_PUBLIC_Seceret_Key_API)
 
     generateCoverLetter(
       position,
@@ -274,14 +258,13 @@ const generateCoverLetter = async (
               />
             </div>
             <div className="flex justify-center mb-20">
-            <button
-              className="  bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              type="submit"
-            >
-              {loading ? "loading..." : "Generate Cover Letter"}
-            </button>
+              <button
+                className="  bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                type="submit"
+              >
+                {loading ? "loading..." : "Generate Cover Letter"}
+              </button>
             </div>
-          
           </form>
         </div>
       </div>
