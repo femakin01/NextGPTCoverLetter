@@ -34,7 +34,18 @@ npm install
 
 # Configure the OpenAI API key:
 
-Create YOUR_API_KEY in the .env file and use the API Key in the `app/util.js` file
+Create YOUR_API_KEY in the .env file
+
+like `NEXT_PUBLIC_Seceret_Key_API='your_api_key'`
+
+ and use the API Key in the `app/util.js` file like
+
+```
+const OpenAI = require('openai-api');
+const OPENAI_API_KEY = process.env.NEXT_PUBLIC_Seceret_Key_API;
+export const openai = new OpenAI(OPENAI_API_KEY);
+
+```
 
 
 # Start the development server:
