@@ -44,13 +44,7 @@ export default function Home() {
       })
       .then(async (res) => {
         if (res.status === 200) {
-          setName("");
-          setCompany("");
-          setDegree("");
-          setExperience("");
-          setPosition("");
-          setSpecialtyOne("");
-          setSpecialtyTwo("");
+          
           setLoading(false);
           // If the response status is 200, update the state variables, create a PDF document and save it
           if (res.status === 200) {
@@ -95,13 +89,7 @@ export default function Home() {
       })
       .catch((err) => {
         setLoading(false);
-        setName("");
-        setCompany("");
-        setDegree("");
-        setExperience("");
-        setPosition("");
-        setSpecialtyOne("");
-        setSpecialtyTwo("");
+        
         Swal.fire({
           title: "Error!",
           text: `${err}`,
