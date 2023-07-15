@@ -34,7 +34,7 @@ npm install
 
 # Configure the OpenAI API key:
 
-Create YOUR_API_KEY in the .env file
+Create YOUR_API_KEY in the .env file in the root folder like `NextGPTCoverLetter/.env.local`
 
 like `NEXT_PUBLIC_Seceret_Key_API='your_api_key'`
 
